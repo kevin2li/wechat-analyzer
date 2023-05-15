@@ -1,12 +1,23 @@
-base_id="8fd34265d5703d242da91e26614da411"        # 32位随机字符1((位于/data/data/com.tencent.mm/MicroMsg下))
-media_id="7efeaab26d8444e38fb01b09d5bb71bf"       # 32位随机字符2(位于/sdcard/Android/data/com.tencent.mm/MicroMsg下)
 export_dir="/storage/emulated/0/Pictures/export"  # 媒体数据导出存储目录
-
-
 base_dir="/data/data/com.tencent.mm/MicroMsg"
 media_dir="/sdcard/Android/data/com.tencent.mm/MicroMsg"
 
-mkdir -p ${export_dir}
+base_id=$(basename "$( find $base_dir -name 'EnMicroMsg.db' -exec dirname {} \; )")
+media_id=$(cat "$base_dir/$base_id/account.mapping")
+
+echo "get base_id: $base_id"
+echo "get media_id: $media_id"
+
+if [ -d $export_dir ]; then
+  echo "export dir: $export_dir already exists, please specify another one!"
+  exit 1
+else
+  mkdir -p ${export_dir}
+fi
+
+cp "$base_dir/$base_id/EnMicroMsg.db" ${export_dir}
+cp "$base_dir/$base_id/WxFileIndex.db" ${export_dir}
+cp "/data/data/com.tencent.mm/shared_prefs/auth_info_key_prefs.xml" ${export_dir}
 
 # 拷贝图片
 echo "[1/5] copy image2 directory..."
@@ -45,10 +56,12 @@ else
 fi
 
 # 拷贝下载文件
-path="${media_dir}/${media_id}/Download"
+path="${media_dir}//Download"
 echo "[5/5] copy Download directory..."
 if [ -d $path ]; then
   cp -r $path $export_dir
 else
   echo "${path} does not exists!"
 fi
+
+echo "Done!"

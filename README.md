@@ -2,6 +2,7 @@
 > 注意：本教程主要关注Android设备，IOS设备可参考其他仓库，如[WechatExporter](https://github.com/BlueMatthew/WechatExporter)等
 
 ## 流程分析
+
 ### 1. 数据获取  
 
 思路：由于Android手机没有root权限，先将聊天记录迁移到安卓模拟器，打开模拟器的root权限，然后从中提取以下文件或目录:
@@ -15,8 +16,11 @@
 - `/data/data/com.tencent.mm/shared_prefs/auth_info_key_prefs.xml`  
 该文件包含`uin`值，下面破解密码会用到。
 
+- `/data/data/com.tencent.mm/MicroMsg/[32位随机字符]/account.mapping`  
+该文件包含一个32位随机字符串，是音频、视频等媒体文件在`/sdcard/Android/data/com.tencent.mm/MicroMsg`中的存储目录名称。
 
-### 2. 数据库解密  
+
+### 2. 数据库密码破解  
 
 密码： `MD5(IMEI+uin)[:7]`
 
@@ -55,6 +59,19 @@ PRAGMA cipher_hmac_algorithm = HMAC_SHA1;
 打开成功示例：
 
 ![EnMicroMsg.db](https://minio.kevin2li.top/image-bed/202305150927750.png)
+
+### 4. 数据库解密
+
+前面通过破解的密码可以查看到数据库内容了，但是为了方便后面的分析，我们把它转成明文数据库。
+
+```bash
+# EnMicroMsg.db解密
+docker run --rm -v C:\Users\kevin\Documents\leidian9\Pictures\export:/wcdb  greycodee/wcdb-sqlcipher -f EnMicroMsg.db -k abd1d68
+
+# WxFileIndex.db解密
+docker run --rm -v C:\Users\kevin\Documents\leidian9\Pictures\export:/wcdb  greycodee/wcdb-sqlcipher -f WxFileIndex.db -k abd1d68
+
+```
 
 ### 4. 数据库分析
 **表结构分析：**
@@ -120,7 +137,7 @@ PRAGMA cipher_hmac_algorithm = HMAC_SHA1;
 | 43         | 视频                 |
 | 47         | 大表情               |
 | 49         | 文件                 |
-| 1000       | 撤回消息提醒         |
+| 10000      | 撤回消息提醒         |
 | 436207665  | 微信红包             |
 | 419430449  | 微信转账             |
 
